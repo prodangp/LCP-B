@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # Run on CPU
+#os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # Run on CPU
 
 import tensorflow as tf
 import ltc_model as ltc
@@ -9,6 +9,8 @@ from ctrnn_model import CTRNN, NODE, CTGRU
 import argparse
 import datetime as dt
 
+#from tensorflow.python.client import device_lib 
+#print(device_lib.list_local_devices())
 
 def to_float(v):
     if v == "?":
@@ -20,8 +22,8 @@ def to_float(v):
 def load_trace():
     total = 0
     labels = []
-    all_x = []
-    all_y = []
+    x = []
+    y = []
     proteins_stats = []
     total_ck = 0
     labels_dict = {'-': 0, 'H': 1, 'E': 2, 'S': 3, 'T': 4, 'B': 5, 'G': 6, 'p': 7, 'I': 8}
@@ -30,50 +32,62 @@ def load_trace():
         miss = 0
         f.readline()
         line = f.readline()
+        #N = 100000
+        #x = np.empty(N, dtype=np.float32)
+        #y = np.empty(N, dtype=np.int32)
         while line:
             if line[0] == '#':
                 proteins_stats.append(total - total_ck)
                 total_ck = total
-                all_x.append(-1.0)
-                all_y.append(-1.0)
+                #x.append([-1.0,])
+                #y.append(-1)
+                #total += 1
                 line = f.readline()
                 continue
-            total += 1
             aa = line[0]
             label = line[-2]
-            if label not in labels:
-                labels.append(label)
+            x.append([float(ord(aa) - 65),])
+            #y[total] = int(labels_dict[label])
+            y.append(int(labels_dict[label]))
+            total += 1
+            #if label not in labels:
+            #    labels.append(label)
             line = f.readline()
-            all_x.append(float(ord(aa) - 65))
-            all_y.append(float(labels_dict[label]))
+
+
 
     # found '!' in the data
     print("Missing features in {} out of {} samples ({:0.2f})".format(miss,total,100*miss/total))
-    print("Read {} lines".format(len(all_x)))
-    all_x = np.stack(all_x,axis=0)
-    all_y = np.array(all_y)
+    print("Read {} lines".format(len(x)))
+    #all_x = np.stack(all_x,axis=0)
+    x = np.array(x).astype(np.float32)
 
-    print("Imbalance: {:0.2f}%".format(100*np.mean(all_y)))
-    all_y -= np.mean(all_y)  # normalize
-    all_y /= np.std(all_y)   # normalize
-    all_x -= np.mean(all_x)  # normalize
-    all_x /= np.std(all_x)   # normalize
+    #print("Imbalance: {:0.2f}%".format(100*np.mean(all_y)))
+    #all_y -= np.mean(all_y)  # normalize
+    #all_y /= np.std(all_y)   # normalize
+    x -= np.mean(x)   # normalize
+    x /= np.std(x)    # normalize
 
-    return all_x, all_y
+    return x, y
 
 
-def cut_in_sequences(x,y,seq_len,inc=1):
+def cut_in_sequences(x,y,seq_len,interleaved=1):
 
-    sequences_x = []
-    sequences_y = []
+    num_sequences = x.shape[0]//seq_len
+    sequences = []
 
-    for s in range(0,x.shape[0] - seq_len,inc):
-        start = s
+    for s in range(num_sequences):
+        start = seq_len*s
         end = start+seq_len
-        sequences_x.append(x[start:end])
-        sequences_y.append(y[start:end])
+        sequences.append((x[start:end],y[start:end]))
 
-    return np.stack(sequences_x,axis=1),np.stack(sequences_y,axis=1)
+        if(interleaved and s < num_sequences - 1):
+            start += seq_len//2
+            end = start+seq_len
+            sequences.append((x[start:end],y[start:end]))
+
+    return sequences
+
 
 
 class SeqData:
@@ -81,16 +95,21 @@ class SeqData:
 
         x,y = load_trace()
         
-        train_x, train_y = cut_in_sequences(x, y, seq_len, inc=4)
-
+        train_traces = []
+        valid_traces = []
+        test_traces = []
+        
+        train_x, train_y = list(zip(*cut_in_sequences(x, y, seq_len, interleaved=True)))
         self.train_x = np.stack(train_x,axis=1)
+        print(self.train_x.shape)
         self.train_y = np.stack(train_y,axis=1)
+        print(self.train_y.shape)
 
         total_seqs = self.train_x.shape[1]
         print("Total number of training sequences: {}".format(total_seqs))
         #permutation = np.random.RandomState(23489).permutation(total_seqs)
-        valid_size = int(0.1*total_seqs)
-        test_size = int(0.15*total_seqs)
+        valid_size = int(0.10*total_seqs)
+        test_size =  int(0.15*total_seqs)
 
         # self.valid_x = self.train_x[:, permutation[:valid_size]]
         # self.valid_y = self.train_y[:, permutation[:valid_size]]
@@ -101,7 +120,9 @@ class SeqData:
         self.valid_x = self.train_x[:, :valid_size]
         self.valid_y = self.train_y[:, :valid_size]
         self.test_x = self.train_x[:,  valid_size:valid_size+test_size]
+        print(self.test_x.shape)
         self.test_y = self.train_y[:,  valid_size:valid_size+test_size]
+        print(self.test_y.shape)
         self.train_x = self.train_x[:, valid_size+test_size:]
         self.train_y = self.train_y[:, valid_size+test_size:]
 
@@ -121,128 +142,73 @@ class SeqData:
 
 
 class SeqModel:
-    def __init__(self,model_type,model_size,sparsity_level=0.0,learning_rate = 0.001):
+    def __init__(self,model_type,model_size,epochs, learning_rate = 0.001):
         self.model_type = model_type
-        self.constrain_op = []
-        self.sparsity_level = sparsity_level
-
-        self.x = tf.placeholder(dtype=tf.float32,shape=[None,None,72])
-        self.target_y = tf.placeholder(dtype=tf.int64,shape=[None,None])
-
+        self.constrain_op = None
+        self.x = tf.placeholder(dtype=tf.float32, shape=[None, None,1])
+        self.target_y = tf.placeholder(dtype=tf.int32, shape=[None, None])
+        self.epochs = epochs
         self.model_size = model_size
         head = self.x
-        if(model_type == "lstm"):
+        if (model_type == "lstm"):
             self.fused_cell = tf.nn.rnn_cell.LSTMCell(model_size)
 
-            head,_ = tf.nn.dynamic_rnn(self.fused_cell,head,dtype=tf.float32,time_major=True)
-        elif(model_type.startswith("ltc")):
-            learning_rate = 0.01 # LTC needs a higher learning rate
+            head, _ = tf.nn.dynamic_rnn(self.fused_cell, head, dtype=tf.float32, time_major=True)
+        elif (model_type.startswith("ltc")):
+            learning_rate = 0.01  # LTC needs a higher learning rate
             self.wm = ltc.LTCCell(model_size)
-            if(model_type.endswith("_rk")):
+            if (model_type.endswith("_rk")):
                 self.wm._solver = ltc.ODESolver.RungeKutta
-            elif(model_type.endswith("_ex")):
+            elif (model_type.endswith("_ex")):
                 self.wm._solver = ltc.ODESolver.Explicit
             else:
                 self.wm._solver = ltc.ODESolver.SemiImplicit
 
-            head,_ = tf.nn.dynamic_rnn(self.wm,head,dtype=tf.float32,time_major=True)
-            self.constrain_op.extend(self.wm.get_param_constrain_op())
-        elif(model_type == "node"):
-            self.fused_cell = NODE(model_size,cell_clip=-1)
-            head,_ = tf.nn.dynamic_rnn(self.fused_cell,head,dtype=tf.float32,time_major=True)
-        elif(model_type == "ctgru"):
-            self.fused_cell = CTGRU(model_size,cell_clip=-1)
-            head,_ = tf.nn.dynamic_rnn(self.fused_cell,head,dtype=tf.float32,time_major=True)
-        elif(model_type == "ctrnn"):
-            self.fused_cell = CTRNN(model_size,cell_clip=-1,global_feedback=True)
-            head,_ = tf.nn.dynamic_rnn(self.fused_cell,head,dtype=tf.float32,time_major=True)
+            head, _ = tf.nn.dynamic_rnn(self.wm, head, dtype=tf.float32, time_major=True)
+            self.constrain_op = self.wm.get_param_constrain_op()
+        elif (model_type == "node"):
+            self.fused_cell = NODE(model_size, cell_clip=-1)
+            head, _ = tf.nn.dynamic_rnn(self.fused_cell, head, dtype=tf.float32, time_major=True)
+        elif (model_type == "ctgru"):
+            self.fused_cell = CTGRU(model_size, cell_clip=-1)
+            head, _ = tf.nn.dynamic_rnn(self.fused_cell, head, dtype=tf.float32, time_major=True)
+        elif (model_type == "ctrnn"):
+            self.fused_cell = CTRNN(model_size, cell_clip=-1, global_feedback=True)
+            head, _ = tf.nn.dynamic_rnn(self.fused_cell, head, dtype=tf.float32, time_major=True)
         else:
             raise ValueError("Unknown model type '{}'".format(model_type))
-        
-        self._debug_list_sparse_vars = []
-        if(self.sparsity_level > 0):
-            self.constrain_op.extend(self.get_sparsity_ops())
 
-        self.y = tf.layers.Dense(2,activation=None)(head)
-        print("logit shape: ",str(self.y.shape))
-        weight = tf.cast(self.target_y,dtype=tf.float32)*1.5+0.1
-        self.loss = tf.losses.sparse_softmax_cross_entropy(
-            labels = self.target_y,
-            logits = self.y,
-            weights=weight
-            )
-        print("loss shape: ",str(self.loss.shape))
-        self.loss = tf.reduce_mean(self.loss)
-
+        #tf.keras.layers.Flatten() 
+        self.y = tf.layers.Dense(9, activation=None)(head)
+        print("logit shape: ", str(self.y.shape))
+        self.loss = tf.reduce_mean(tf.losses.sparse_softmax_cross_entropy(
+            labels=self.target_y,
+            logits=self.y,
+        ))
         optimizer = tf.train.AdamOptimizer(learning_rate)
         self.train_step = optimizer.minimize(self.loss)
 
         model_prediction = tf.argmax(input=self.y, axis=2)
-
-        lab = tf.cast(self.target_y,dtype=tf.float32)
-        pred = tf.cast(model_prediction,dtype=tf.float32)
-
-        # True/False positives/negatives
-        tp = tf.reduce_sum(lab*pred)
-        tn = tf.reduce_sum((1-lab)*(1-pred))
-        fp = tf.reduce_sum((1-lab)*(pred))
-        fn = tf.reduce_sum((lab)*(1-pred))
-
-        # don't divide by zero
-        # Precision and Recall
-        self.prec = tp/(tp+fp+0.00001)
-        self.recall = tp/(tp+fn+0.00001)
-        # F1-score (Geometric mean of precision and recall)
-        self.accuracy = 2*(self.prec*self.recall)/(self.prec+self.recall+0.000001)
+        self.accuracy = tf.reduce_mean(
+            tf.cast(tf.equal(model_prediction, tf.cast(self.target_y, tf.int64)), tf.float32))
 
         self.sess = tf.InteractiveSession()
         self.sess.run(tf.global_variables_initializer())
 
-        self.result_file = os.path.join("results","ozone","{}_{}_{:02d}.csv".format(model_type,model_size,int(100*self.sparsity_level)))
-        if(not os.path.exists("results/ozone")):
-            os.makedirs("results/ozone")
-        if(not os.path.isfile(self.result_file)):
-            with open(self.result_file,"w") as f:
-                f.write("best epoch, train loss, train acc, valid loss, valid acc, test loss, test acc\n")
+        self.result_file = os.path.join("results", "seq", "{}_{}_{}.csv".format(model_type, model_size, epochs))
+        if (not os.path.exists("results/seq")):
+            os.makedirs("results/seq")
+        if (not os.path.isfile(self.result_file)):
+            with open(self.result_file, "w") as f:
+                f.write(
+                    "best epoch, train loss, train accuracy, valid loss, valid accuracy, test loss, test accuracy\n")
 
-        self.checkpoint_path = os.path.join("tf_sessions","ozone","{}".format(model_type))
-        if(not os.path.exists("tf_sessions/ozone")):
-            os.makedirs("tf_sessions/ozone")
-            
+        self.checkpoint_path = os.path.join("tf_sessions", "seq", "{}".format(model_type))
+        if (not os.path.exists("tf_sessions/seq")):
+            os.makedirs("tf_sessions/seq")
+
         self.saver = tf.train.Saver()
-
-    def get_sparsity_ops(self):
-        tf_vars = tf.trainable_variables()
-        op_list = []
-        self._debug_list_sparse_vars = []
-        for v in tf_vars:
-            # print("Variable {}".format(str(v)))
-            sparsify = False
-            if(v.name.startswith("rnn")):
-                sparsify = True
-                if(len(v.shape)<2):
-                    # Don't sparsity biases
-                    sparsify = False
-                if("ltc" in v.name and (not "W:0" in v.name)):
-                    # LTC can be sparsified by only setting w[i,j] to 0
-                    # both input and recurrent matrix will be sparsified
-                    sparsify = False
-            if(sparsify):
-                op_list.append(self.sparse_var(v,self.sparsity_level))
-            else:
-                print("Don't sparsify '{}'".format(v.name))
-                
-        return op_list
-        
-    def sparse_var(self,v,sparsity_level):
-        mask = np.random.choice([0, 1], size=v.shape, p=[sparsity_level,1-sparsity_level]).astype(np.float32)
-        print("Mask mean: ",str(np.mean(mask)))
-        v_assign_op = tf.assign(v,v*mask)
-        print("Var[{}] will be sparsified with {:0.2f} sparsity level".format(
-            v.name,sparsity_level
-        ))
-        self._debug_list_sparse_vars.append(v)
-        return v_assign_op
+  
 
     def save(self):
         self.saver.save(self.sess, self.checkpoint_path)
@@ -251,16 +217,19 @@ class SeqModel:
         self.saver.restore(self.sess, self.checkpoint_path)
 
 
-    def fit(self,gesture_data,epochs,verbose=True,log_period=50):
+    def fit(self,gesture_data,verbose=True,log_period=50):
         best_valid_acc = 0
+        epochs = self.epochs
         best_valid_stats = (0,0,0,0,0,0,0)
         self.save()
+        print(gesture_data.test_x.shape)
+        print(gesture_data.test_y.shape)
         for e in range(epochs):
             if(verbose and e%log_period == 0):
-                test_acc,test_loss = self.sess.run([self.accuracy,self.loss],{self.x:gesture_data.test_x,self.target_y: gesture_data.test_y})
-                valid_acc,valid_loss = self.sess.run([self.accuracy,self.loss],{self.x:gesture_data.valid_x,self.target_y: gesture_data.valid_y})
-                valid_prec,valid_recall = self.sess.run([self.prec,self.recall],{self.x:gesture_data.valid_x,self.target_y: gesture_data.valid_y})
-                print("valid prec: {:0.2f}, recall: {:0.2f}".format(100*valid_prec,100*valid_recall))
+                
+                test_acc,test_loss = self.sess.run([self.accuracy,self.loss],{self.x:np.transpose(gesture_data.test_x, (0,1,2)),self.target_y: gesture_data.test_y})
+                valid_acc,valid_loss = self.sess.run([self.accuracy,self.loss],{self.x:np.transpose(gesture_data.valid_x, (0,1,2)),self.target_y: gesture_data.valid_y})
+
                 # F1 metric -> higher is better
                 if((valid_acc > best_valid_acc and e > 0) or e==1):
                     best_valid_acc = valid_acc
@@ -274,7 +243,7 @@ class SeqModel:
 
             losses = []
             accs = []
-            for batch_x,batch_y in gesture_data.iterate_train(batch_size=16):
+            for batch_x,batch_y in gesture_data.iterate_train(batch_size=64):
                 acc,loss,_ = self.sess.run([self.accuracy,self.loss,self.train_step],{self.x:batch_x,self.target_y: batch_y})
                 if(len(self.constrain_op) > 0):
                     self.sess.run(self.constrain_op)
@@ -315,11 +284,10 @@ if __name__ == "__main__":
     parser.add_argument('--log',default=1,type=int)
     parser.add_argument('--size',default=32,type=int)
     parser.add_argument('--epochs',default=200,type=int)
-    parser.add_argument('--sparsity',default=0.0,type=float)
 
     args = parser.parse_args()
 
     seq_data = SeqData()
-    model = SeqModel(model_type=args.model, model_size=args.size, sparsity_level=args.sparsity)
-    model.fit(seq_data, epochs=args.epochs, log_period=args.log)
+    model = SeqModel(model_type=args.model, model_size=args.size, epochs=args.epochs)
+    model.fit(seq_data, log_period=args.log)
 
