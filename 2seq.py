@@ -12,12 +12,6 @@ import datetime as dt
 #from tensorflow.python.client import device_lib 
 #print(device_lib.list_local_devices())
 
-def to_float(v):
-    if v == "?":
-        return 0
-    else:
-        return float(v)
-
 
 def load_trace():
     total = 0
@@ -26,27 +20,32 @@ def load_trace():
     y = []
     proteins_stats = []
     total_ck = 0
-    labels_dict = {'-': 0, 'H': 1, 'E': 2, 'S': 3, 'T': 4, 'B': 5, 'G': 6, 'p': 7, 'I': 8}
+    labels_dict = {'#': 0, 'H': 1, 'E': 2, 'S': 3, 'T': 3, 'B': 2, 'G': 1, 'p': 3, 'I': 3, '-': 3}
 
     with open("/home/prody/Desktop/struct-seq.dat", "r") as f:
         miss = 0
         f.readline()
         line = f.readline()
-        #N = 100000
+        N = 1000000
         #x = np.empty(N, dtype=np.float32)
         #y = np.empty(N, dtype=np.int32)
-        while line:
+        while total < N:
             if line[0] == '#':
                 proteins_stats.append(total - total_ck)
                 total_ck = total
-                #x.append([-1.0,])
-                #y.append(-1)
+                x.append([0,])
+                x.append([0,])
+                x.append([0,])
+                y.append(0)        
+                y.append(0)        
+                y.append(0)        
+                    
                 #total += 1
                 line = f.readline()
                 continue
             aa = line[0]
             label = line[-2]
-            x.append([float(ord(aa) - 65),])
+            x.append([float(ord(aa) - 64),])
             #y[total] = int(labels_dict[label])
             y.append(int(labels_dict[label]))
             total += 1
@@ -179,7 +178,7 @@ class SeqModel:
             raise ValueError("Unknown model type '{}'".format(model_type))
 
         #tf.keras.layers.Flatten() 
-        self.y = tf.layers.Dense(9, activation=None)(head)
+        self.y = tf.layers.Dense(4, activation=None)(head)
         print("logit shape: ", str(self.y.shape))
         self.loss = tf.reduce_mean(tf.losses.sparse_softmax_cross_entropy(
             labels=self.target_y,
