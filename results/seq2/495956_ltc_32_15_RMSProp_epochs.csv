@@ -1,0 +1,15 @@
+Epochs 000, train loss: 1.45, train acc: -0.75, valid loss: 1.47, valid acc: -0.80, test loss: 1.47, test acc: -0.73
+Epochs 001, train loss: 1.38, train acc: -0.31, valid loss: 1.41, valid acc: -0.88, test loss: 1.41, test acc: -0.81
+Epochs 002, train loss: 1.31, train acc: 0.04, valid loss: 1.34, valid acc: 0.04, test loss: 1.34, test acc: 0.04
+Epochs 003, train loss: 1.25, train acc: 0.01, valid loss: 1.26, valid acc: 0.03, test loss: 1.27, test acc: 0.03
+Epochs 004, train loss: 1.22, train acc: -0.00, valid loss: 1.21, valid acc: 0.00, test loss: 1.22, test acc: 0.00
+Epochs 005, train loss: 1.19, train acc: -0.00, valid loss: 1.18, valid acc: 0.00, test loss: 1.20, test acc: 0.00
+Epochs 006, train loss: 1.17, train acc: -0.00, valid loss: 1.16, valid acc: 0.00, test loss: 1.18, test acc: 0.00
+Epochs 007, train loss: 1.10, train acc: 0.01, valid loss: 1.12, valid acc: 0.00, test loss: 1.14, test acc: 0.00
+Epochs 008, train loss: 1.06, train acc: 0.01, valid loss: 1.00, valid acc: 0.01, test loss: 1.02, test acc: 0.01
+Epochs 009, train loss: 0.83, train acc: 0.26, valid loss: 0.92, valid acc: 0.16, test loss: 0.94, test acc: 0.16
+Epochs 010, train loss: 0.60, train acc: 0.43, valid loss: 0.66, valid acc: 0.38, test loss: 0.68, test acc: 0.38
+Epochs 011, train loss: 0.64, train acc: 0.41, valid loss: 0.56, valid acc: 0.43, test loss: 0.58, test acc: 0.44
+Epochs 012, train loss: 0.53, train acc: 0.47, valid loss: 0.53, valid acc: 0.46, test loss: 0.54, test acc: 0.47
+Epochs 013, train loss: 0.53, train acc: 0.47, valid loss: 0.52, valid acc: 0.47, test loss: 0.53, test acc: 0.48
+Epochs 014, train loss: 0.53, train acc: 0.48, valid loss: 0.52, valid acc: 0.47, test loss: 0.53, test acc: 0.47

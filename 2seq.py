@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 import os
 #os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # Run on CPU
 
@@ -7,9 +6,9 @@ import tensorflow as tf
 import ltc_model as ltc
 from ctrnn_model import CTRNN, NODE, CTGRU
 import argparse
-import datetime as dt
 
-#from tensorflow.python.client import device_lib 
+
+#from tensorflow.python.client import device_lib
 #print(device_lib.list_local_devices())
 
 

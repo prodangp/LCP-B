@@ -1,0 +1,2 @@
+model, size, lr, opt, activation, best epoch, train loss, train accuracy, valid loss, valid accuracy, test loss, test accuracy
+ltc,32,0.5,Adadelta,relu,1,1.5358994007110596,-0.7362739642690921,1.5315190553665161,-0.8093078356801543,1.5310982465744019,-0.7435539037484216
