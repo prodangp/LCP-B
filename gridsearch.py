@@ -14,11 +14,12 @@ call('conda activate lct_nn', shell=True, stdout=DEVNULL, stderr=STDOUT)
 class Grid:
     def __init__(self, epochs=10):
         self.pars = {
-            "model": ["lstm", "ltc", "ltc_rk", "ltc_ex", "node", "ctgru", "ctrnn"],
+            "model": ["lstm", "node", "ctgru", "ctrnn"],
             "size": [4, 8, 16, 32, 64],
             "lr": [0.001, 0.005, 0.01, 0.05, 0.1, 0.5],
             "opt": ['Adam', 'Adagrad', 'RMSProp', 'GD', 'Adadelta'],
-            "activation": ['sigmoid', 'tanh', 'relu']
+            "activation": ['sigmoid', 'tanh', 'relu'],
+            "window": [6, 12]
         }
         self.epochs = epochs
 
@@ -31,10 +32,10 @@ class Grid:
         for grid_pars in tqdm(list(itertools.product(*[self.pars[par] for par in pars]))):
             self.run(*list(kwargs.values()), *grid_pars)
             
-    def run(self, model, size, lr, opt, activation):
-        call(f"python 2seq_onehot_rand.py --model {model} --size {size} --lr {lr} --opt {opt} "
-             f"--activation {activation}", shell=True, stdout=DEVNULL, stderr=STDOUT)
+    def run(self, model, size, lr, opt, activation, window):
+        call(f"python 2seq_onehot_rand_w.py --model {model} --size {size} --lr {lr} --opt {opt} "
+             f"--activation {activation} --window {window}", shell=True, stdout=DEVNULL, stderr=STDOUT)
 
 grid = Grid(epochs=15)
-grid.search(model='ltc', size=32)
+grid.search(model='ltc', size=32, lr=0.05, opt='Adam', activation='sigmoid')
 #grid.run('ltc', 8, 0.001, 'Adam', 'relu')

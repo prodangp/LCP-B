@@ -21,7 +21,6 @@ class LTCCell(tf.nn.rnn_cell.RNNCell):
         self._input_size = -1
         self._num_units = num_units
         self._is_built = False
-
         activation_dict = {'sigmoid': tf.nn.sigmoid, 'tanh': tf.nn.tanh, 'relu': tf.nn.relu, 'elu': tf.nn.elu}
         self.activation = activation_dict[activation]
 

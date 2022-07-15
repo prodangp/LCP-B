@@ -1,0 +1,2 @@
+Epochs 000, train loss: 0.97, train acc: 0.25, valid loss: 1.39, valid acc: -0.65, test loss: 1.39, test acc: -0.58
+Epochs 001, train loss: 0.64, train acc: 0.39, valid loss: 0.66, valid acc: 0.39, test loss: 0.68, test acc: 0.40

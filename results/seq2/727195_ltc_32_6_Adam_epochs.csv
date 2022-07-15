@@ -1,0 +1,6 @@
+Epochs 000, train loss: 0.97, train acc: 0.52 (std 0.00), valid loss: 1.33, valid acc: 0.31 (std 0.02), test loss: 1.29, test acc: 0.35 (std 0.02)
+Epochs 001, train loss: 0.96, train acc: 0.53 (std 0.00), valid loss: 1.07, valid acc: 0.49 (std 0.03), test loss: 0.86, test acc: 0.60 (std 0.02)
+Epochs 002, train loss: 0.96, train acc: 0.53 (std 0.00), valid loss: 1.03, valid acc: 0.52 (std 0.03), test loss: 0.85, test acc: 0.58 (std 0.03)
+Epochs 003, train loss: 0.96, train acc: 0.53 (std 0.00), valid loss: 1.05, valid acc: 0.50 (std 0.03), test loss: 0.84, test acc: 0.61 (std 0.02)
+Epochs 004, train loss: 0.96, train acc: 0.53 (std 0.00), valid loss: 1.03, valid acc: 0.50 (std 0.03), test loss: 0.84, test acc: 0.60 (std 0.02)
+Epochs 005, train loss: 0.96, train acc: 0.53 (std 0.00), valid loss: 1.05, valid acc: 0.50 (std 0.03), test loss: 0.87, test acc: 0.60 (std 0.02)

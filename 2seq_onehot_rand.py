@@ -220,7 +220,7 @@ class SeqModel:
         if (not os.path.exists("results/seq2")):
             os.makedirs("results/seq2")
         if (not os.path.isfile(self.result_file)):
-            with open('results/seq2/experiments', "w") as f:
+            with open('results/seq2/exp/seq_len', "w") as f:
                 f.write(
                     "model, size, lr, opt, activation, best epoch, train loss, train accuracy, valid loss, valid accuracy, test loss, test accuracy\n")
 
@@ -269,7 +269,7 @@ class SeqModel:
             # (TP+ZEROS/N+ZEROS - zf/1+zf)) * (1+ZEROS/N) 
             losses = []
             accs = []
-            for batch_x,batch_y in gesture_data.iterate_train(batch_size=128):
+            for batch_x,batch_y in gesture_data.iterate_train(batch_size=32):
                 acc,loss,_ = self.sess.run([self.accuracy,self.loss,self.train_step],{self.x:batch_x,self.target_y: batch_y})
                 if self.constrain_op is not None:
                     if len(self.constrain_op) > 0:
@@ -311,7 +311,7 @@ class SeqModel:
             valid_loss,valid_acc,
             test_loss,test_acc
         ))
-        with open('results/seq2/experiments', "a") as f:
+        with open('results/seq2/exp/seq_len', "a") as f:
             f.write(
                 f"{self.model_type},{self.model_size},{self.lr},{self.opt},{self.activation},{best_epoch},{train_loss},"
                 f"{train_acc},{valid_loss},{valid_acc},{test_loss},{test_acc}\n")
