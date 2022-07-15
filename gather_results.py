@@ -1,6 +1,11 @@
 from glob import glob
 import itertools
 
+#################################
+# Author: George P. Prodan      #
+# Last modified: 7 july 2022   #
+#################################
+
 results = glob('results/seq2/*ltc_32*')
 results.sort()
 

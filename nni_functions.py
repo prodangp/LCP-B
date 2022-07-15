@@ -1,3 +1,9 @@
+#################################
+# Author: George P. Prodan      #
+# Last modified: 10 july 2022   #
+#################################
+
+
 def linear(pos, k=0.5):
     return 1 - k/5 * pos
 

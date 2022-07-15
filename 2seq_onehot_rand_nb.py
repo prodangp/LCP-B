@@ -11,6 +11,9 @@ import json
 
 from nni_functions import interaction_score
 
+# NNI method for inputs - modified by George
+
+
 AA_MAX = 0
 ZERO_COUNT_TRAINING = 0
 ZERO_COUNT_VALIDATION = 0

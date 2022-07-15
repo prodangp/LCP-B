@@ -3,10 +3,11 @@ import os
 #os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # Run on CPU
 
 import tensorflow as tf
-import ltc_model as ltc
+import ltc_network as ltc
 from ctrnn_model import CTRNN, NODE, CTGRU
 import argparse
 
+# LNN for one amino acid
 
 #from tensorflow.python.client import device_lib
 #print(device_lib.list_local_devices())

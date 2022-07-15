@@ -19,6 +19,9 @@ AA_VALIDATION = None
 N = 2000
 
 
+# sequences
+
+
 def load_trace(window_size=9):
     global ZERO_COUNT
     global N

@@ -9,6 +9,8 @@ from ctrnn_model import CTRNN, NODE, CTGRU
 import argparse
 import json
 
+# full proteins randomised
+
 AA_MAX = 0
 ZERO_COUNT_TRAINING = 0
 ZERO_COUNT_VALIDATION = 0
