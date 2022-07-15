@@ -7,7 +7,7 @@ import ltc_network as ltc
 from ctrnn_model import CTRNN, NODE, CTGRU
 import argparse
 
-# LNN for one amino acid
+# LNN for one amino acid - George
 
 #from tensorflow.python.client import device_lib
 #print(device_lib.list_local_devices())

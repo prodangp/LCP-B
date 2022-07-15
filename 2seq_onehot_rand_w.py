@@ -19,7 +19,7 @@ AA_VALIDATION = None
 N = 2000
 
 
-# sequences
+# sequences - George
 
 
 def load_trace(window_size=9):
